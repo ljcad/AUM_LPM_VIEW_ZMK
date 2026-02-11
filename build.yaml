@@ -1,6 +1,6 @@
 include:
   - board: nice_nano
-    shield: lily58_left lpm_view
+    shield: lily58_left lpm_view_adapter lpm_view
     snippet: studio-rpc-usb-uart
   - board: nice_nano
     shield: lily58_right
