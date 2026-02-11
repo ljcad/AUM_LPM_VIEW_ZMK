@@ -84,7 +84,8 @@ static void draw_top(lv_obj_t *widget, lv_color_t cbuf[], const struct status_st
         break;
     }
 
-    lv_canvas_draw_text(canvas, 0, 0, CANVAS_SIZE, &label_dsc, output_text);
+    lv_draw_label_dsc_t label_dsc = LV_DRAW_LABEL_DSC_INIT_DEFAULT();
+    lv_canvas_draw_text(canvas, lv_area_create(0, 0, CANVAS_SIZE, CANVAS_SIZE), &label_dsc, output_text);
 
     // Draw WPM
     lv_canvas_draw_rect(canvas, 0, 21, 70, 32, &rect_white_dsc);
@@ -116,6 +117,7 @@ static void draw_top(lv_obj_t *widget, lv_color_t cbuf[], const struct status_st
         points[i].x = 2 + i * 7;
         points[i].y = 50 - (state->wpm[i] - min) * 28 / range;
     }
+    lv_draw_line_dsc_t line_dsc = LV_DRAW_LINE_DSC_INIT_DEFAULT();
     lv_canvas_draw_line(canvas, points, 10, &line_dsc);
 
     // Rotate canvas
@@ -149,8 +151,8 @@ static void draw_middle(lv_obj_t *widget, lv_color_t cbuf[], const struct status
     for (int i = 0; i < 5; i++) {
         bool selected = i == state->active_profile_index;
 
-        lv_canvas_draw_arc(canvas, circle_offsets[i][0], circle_offsets[i][1], 13, 0, 360,
-                           &arc_dsc);
+        lv_draw_arc_dsc_t arc_dsc = LV_DRAW_ARC_DSC_INIT_DEFAULT();
+        lv_canvas_draw_arc(canvas, lv_point_create(circle_offsets[i][0], circle_offsets[i][1]), 13, 0, 360, &arc_dsc);
 
         if (selected) {
             lv_canvas_draw_arc(canvas, circle_offsets[i][0], circle_offsets[i][1], 9, 0, 359,
@@ -176,7 +178,9 @@ static void draw_bottom(lv_obj_t *widget, lv_color_t cbuf[], const struct status
     init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_14, LV_TEXT_ALIGN_CENTER);
 
     // Fill background
-    lv_canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
+    lv_draw_rect_dsc_t rect_dsc = LV_DRAW_RECT_DSC_INIT_DEFAULT();
+    rect_dsc.bg_color = lv_color_black();
+    lv_canvas_draw_rect(canvas, lv_area_create(0, 0, CANVAS_SIZE, CANVAS_SIZE), &rect_dsc);
 
     // Draw layer
     if (state->layer_label == NULL) {
