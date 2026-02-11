@@ -14,7 +14,7 @@
 				height = <72>;
 				color_mode = [02];
 				reverse = <1>; 
-				rotation = <0>;
+				rotation = <3>;
     };
 };
 
