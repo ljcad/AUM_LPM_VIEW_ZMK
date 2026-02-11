@@ -47,15 +47,18 @@ struct wpm_status_state {
 static void draw_top(lv_obj_t *widget, lv_color_t cbuf[], const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget, 0);
 
+    // 所有绘制描述符变量集中声明，避免重复定义问题
     lv_draw_label_dsc_t label_dsc;
-    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_RIGHT);
     lv_draw_label_dsc_t label_dsc_wpm;
-    init_label_dsc(&label_dsc_wpm, LVGL_FOREGROUND, &lv_font_unscii_8, LV_TEXT_ALIGN_RIGHT);
     lv_draw_rect_dsc_t rect_black_dsc;
-    init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
     lv_draw_rect_dsc_t rect_white_dsc;
-    init_rect_dsc(&rect_white_dsc, LVGL_FOREGROUND);
     lv_draw_line_dsc_t line_dsc;
+
+    // 初始化所有描述符
+    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_RIGHT);
+    init_label_dsc(&label_dsc_wpm, LVGL_FOREGROUND, &lv_font_unscii_8, LV_TEXT_ALIGN_RIGHT);
+    init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
+    init_rect_dsc(&rect_white_dsc, LVGL_FOREGROUND);
     init_line_dsc(&line_dsc, LVGL_FOREGROUND, 1);
 
     // Fill background
@@ -125,17 +128,20 @@ static void draw_top(lv_obj_t *widget, lv_color_t cbuf[], const struct status_st
 static void draw_middle(lv_obj_t *widget, lv_color_t cbuf[], const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget, 1);
 
+    // 所有绘制描述符变量集中声明
     lv_draw_rect_dsc_t rect_black_dsc;
-    init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
     lv_draw_rect_dsc_t rect_white_dsc;
-    init_rect_dsc(&rect_white_dsc, LVGL_FOREGROUND);
     lv_draw_arc_dsc_t arc_dsc;
-    init_arc_dsc(&arc_dsc, LVGL_FOREGROUND, 2);
     lv_draw_arc_dsc_t arc_dsc_filled;
-    init_arc_dsc(&arc_dsc_filled, LVGL_FOREGROUND, 9);
     lv_draw_label_dsc_t label_dsc;
-    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_18, LV_TEXT_ALIGN_CENTER);
     lv_draw_label_dsc_t label_dsc_black;
+
+    // 初始化所有描述符
+    init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
+    init_rect_dsc(&rect_white_dsc, LVGL_FOREGROUND);
+    init_arc_dsc(&arc_dsc, LVGL_FOREGROUND, 2);
+    init_arc_dsc(&arc_dsc_filled, LVGL_FOREGROUND, 9);
+    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_18, LV_TEXT_ALIGN_CENTER);
     init_label_dsc(&label_dsc_black, LVGL_BACKGROUND, &lv_font_montserrat_18, LV_TEXT_ALIGN_CENTER);
 
     // Fill background
@@ -170,9 +176,12 @@ static void draw_middle(lv_obj_t *widget, lv_color_t cbuf[], const struct status
 static void draw_bottom(lv_obj_t *widget, lv_color_t cbuf[], const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget, 2);
 
+    // 所有绘制描述符变量集中声明
     lv_draw_rect_dsc_t rect_black_dsc;
-    init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
     lv_draw_label_dsc_t label_dsc;
+
+    // 初始化所有描述符
+    init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
     init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_14, LV_TEXT_ALIGN_CENTER);
 
     // Fill background
@@ -316,15 +325,32 @@ int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
 	 // top battery status and output, wpm status 
     lv_obj_t *top = lv_canvas_create(widget->obj);
     lv_obj_align(top, LV_ALIGN_BOTTOM_LEFT, 0, 0);
+    // 兼容LVGL 8.x/9.x宏定义
+    #ifdef LV_IMAGE_FORMAT_TRUE_COLOR
+    lv_canvas_set_buffer(top, widget->cbuf, CANVAS_SIZE, CANVAS_SIZE, LV_IMAGE_FORMAT_TRUE_COLOR);
+    #else
     lv_canvas_set_buffer(top, widget->cbuf, CANVAS_SIZE, CANVAS_SIZE, LV_IMG_CF_TRUE_COLOR);
+    #endif
+    
 	// middle connecion status
     lv_obj_t *middle = lv_canvas_create(widget->obj);
     lv_obj_align(middle, LV_ALIGN_TOP_LEFT,	58, 0);
+    // 兼容LVGL 8.x/9.x宏定义
+    #ifdef LV_IMAGE_FORMAT_TRUE_COLOR
+    lv_canvas_set_buffer(middle, widget->cbuf2, CANVAS_SIZE, CANVAS_SIZE, LV_IMAGE_FORMAT_TRUE_COLOR);
+    #else
     lv_canvas_set_buffer(middle, widget->cbuf2, CANVAS_SIZE, CANVAS_SIZE, LV_IMG_CF_TRUE_COLOR);
+    #endif
+  
   // bottom layer status
     lv_obj_t *bottom = lv_canvas_create(widget->obj);
     lv_obj_align(bottom, LV_ALIGN_TOP_LEFT,	130, 0);
+    // 兼容LVGL 8.x/9.x宏定义
+    #ifdef LV_IMAGE_FORMAT_TRUE_COLOR
+    lv_canvas_set_buffer(bottom, widget->cbuf3, CANVAS_SIZE, CANVAS_SIZE, LV_IMAGE_FORMAT_TRUE_COLOR);
+    #else
     lv_canvas_set_buffer(bottom, widget->cbuf3, CANVAS_SIZE, CANVAS_SIZE, LV_IMG_CF_TRUE_COLOR);
+    #endif
 
     sys_slist_append(&widgets, &widget->node);
     widget_battery_status_init();
