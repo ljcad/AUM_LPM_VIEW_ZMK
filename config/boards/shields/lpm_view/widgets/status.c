@@ -89,12 +89,12 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
     canvas_draw_text(canvas, 0, 0, CANVAS_SIZE, &label_dsc, output_text);
 
     // Draw WPM
-    canvas_draw_rect(canvas, 0, 21, 70, 32, &rect_white_dsc);
-    canvas_draw_rect(canvas, 1, 22, 66, 30, &rect_black_dsc);
+    canvas_draw_rect(canvas, 0, 21, 68, 42, &rect_white_dsc);
+    canvas_draw_rect(canvas, 1, 22, 66, 40, &rect_black_dsc);
 
     char wpm_text[6] = {};
     snprintf(wpm_text, sizeof(wpm_text), "%d", state->wpm[9]);
-    canvas_draw_text(canvas, 42, 42, 24, &label_dsc_wpm, wpm_text);
+    canvas_draw_text(canvas, 42, 52, 24, &label_dsc_wpm, wpm_text);
 
     int max = 0;
     int min = 256;
@@ -116,7 +116,7 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
     lv_point_t points[10];
     for (int i = 0; i < 10; i++) {
         points[i].x = 2 + i * 7;
-        points[i].y = 50 - (state->wpm[i] - min) * 28 / range;
+        points[i].y = 60 - (state->wpm[i] - min) * 36 / range;
     }
     canvas_draw_line(canvas, points, 10, &line_dsc);
 
@@ -195,9 +195,9 @@ static void draw_bottom(lv_obj_t *widget, const struct status_state *state) {
 
         sprintf(text, "LAYER %i", state->layer_index);
 
-        canvas_draw_text(canvas, 0, 0, 72, &label_dsc, text);
+        canvas_draw_text(canvas, 0, 5, 68, &label_dsc, text);
     } else {
-        canvas_draw_text(canvas, 0, 0, 72, &label_dsc, state->layer_label);
+        canvas_draw_text(canvas, 0, 5, 68, &label_dsc, state->layer_label);
     }
 
     // Rotate canvas
@@ -336,10 +336,10 @@ int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     lv_obj_align(top, LV_ALIGN_TOP_RIGHT, 0, 0);
     lv_canvas_set_buffer(top, widget->cbuf, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
     lv_obj_t *middle = lv_canvas_create(widget->obj);
-    lv_obj_align(middle, LV_ALIGN_TOP_LEFT, 58, 0);
+    lv_obj_align(middle, LV_ALIGN_TOP_LEFT, 24, 0);
     lv_canvas_set_buffer(middle, widget->cbuf2, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
     lv_obj_t *bottom = lv_canvas_create(widget->obj);
-    lv_obj_align(bottom, LV_ALIGN_TOP_LEFT, 130, 0);
+    lv_obj_align(bottom, LV_ALIGN_TOP_LEFT, -44, 0);
     lv_canvas_set_buffer(bottom, widget->cbuf3, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
 
     sys_slist_append(&widgets, &widget->node);
