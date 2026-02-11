@@ -15,7 +15,14 @@ void rotate_canvas(lv_obj_t *canvas, lv_color_t cbuf[]) {
     memcpy(cbuf_tmp, cbuf, sizeof(cbuf_tmp));
     lv_img_dsc_t img;
     img.data = (void *)cbuf_tmp;
-    img.header.cf = LV_IMG_CF_TRUE_COLOR;
+    
+    // 兼容LVGL 8.x/9.x的宏定义和结构体成员
+    #ifdef LV_IMAGE_FORMAT_TRUE_COLOR
+    img.header.format = LV_IMAGE_FORMAT_TRUE_COLOR;  // LVGL 9.x 宏名 + 结构体成员
+    #else
+    img.header.cf = LV_IMG_CF_TRUE_COLOR;            // LVGL 8.x 宏名 + 结构体成员
+    #endif
+    
     img.header.w = CANVAS_SIZE;
     img.header.h = CANVAS_SIZE;
 
