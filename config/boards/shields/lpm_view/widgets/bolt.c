@@ -35,12 +35,7 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_BOLT uint
 };
 
 const lv_img_dsc_t bolt = {
-    // 兼容LVGL 8.x/9.x的宏定义和结构体成员
-    #ifdef LV_IMAGE_FORMAT_INDEXED_2BIT
-    .header.format = LV_IMAGE_FORMAT_INDEXED_2BIT,  // LVGL 9.x 宏名 + 结构体成员
-    #else
-    .header.cf = LV_IMG_CF_INDEXED_2BIT,            // LVGL 8.x 宏名 + 结构体成员
-    #endif
+    .header.format = LV_IMAGE_FORMAT_INDEXED_2BIT,  // LVGL 9.x 标准宏
     .header.always_zero = 0,
     .header.reserved = 0,
     .header.w = 11,
