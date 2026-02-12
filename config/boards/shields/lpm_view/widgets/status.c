@@ -33,8 +33,7 @@ struct output_status_state {
     int active_profile_index;
     bool active_profile_connected;
     bool active_profile_bonded;
-    bool profiles_connected[NICEVIEW_PROFILE_COUNT];
-    bool profiles_bonded[NICEVIEW_PROFILE_COUNT];
+
 };
 
 struct layer_status_state {
@@ -116,7 +115,7 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
     lv_point_t points[10];
     for (int i = 0; i < 10; i++) {
         points[i].x = 2 + i * 7;
-        points[i].y = 50 - (state->wpm[i] - min) * 36 / range;
+        points[i].y = 50 - (state->wpm[i] - min) * 28 / range;
     }
     canvas_draw_line(canvas, points, 10, &line_dsc);
 
@@ -144,24 +143,16 @@ static void draw_middle(lv_obj_t *widget, const struct status_state *state) {
     lv_canvas_fill_bg(canvas, LVGL_BACKGROUND, LV_OPA_COVER);
 
     // Draw circles
-    int circle_offsets[NICEVIEW_PROFILE_COUNT][2] = {
+    int circle_offsets[5][2] = {
         {13, 13}, {55, 13}, {34, 34}, {13, 55}, {55, 55},
     };
 
-    for (int i = 0; i < NICEVIEW_PROFILE_COUNT; i++) {
+    for (int i = 0; i < 5; i++) {
         bool selected = i == state->active_profile_index;
 
-        if (state->profiles_connected[i]) {
-            canvas_draw_arc(canvas, circle_offsets[i][0], circle_offsets[i][1], 13, 0, 360,
+       canvas_draw_arc(canvas, circle_offsets[i][0], circle_offsets[i][1], 13, 0, 360,
                             &arc_dsc);
-        } else if (state->profiles_bonded[i]) {
-            const int segments = 8;
-            const int gap = 20;
-            for (int j = 0; j < segments; ++j)
-                canvas_draw_arc(canvas, circle_offsets[i][0], circle_offsets[i][1], 13,
-                                360. / segments * j + gap / 2.0,
-                                360. / segments * (j + 1) - gap / 2.0, &arc_dsc);
-        }
+       
 
         if (selected) {
             canvas_draw_arc(canvas, circle_offsets[i][0], circle_offsets[i][1], 9, 0, 359,
@@ -190,7 +181,7 @@ static void draw_bottom(lv_obj_t *widget, const struct status_state *state) {
     lv_canvas_fill_bg(canvas, LVGL_BACKGROUND, LV_OPA_COVER);
 
     // Draw layer
-    if (state->layer_label == NULL || strlen(state->layer_label) == 0) {
+    if (state->layer_label == NULL  {
         char text[10] = {};
 
         sprintf(text, "LAYER %i", state->layer_index);
@@ -245,10 +236,7 @@ static void set_output_status(struct zmk_widget_status *widget,
     widget->state.active_profile_index = state->active_profile_index;
     widget->state.active_profile_connected = state->active_profile_connected;
     widget->state.active_profile_bonded = state->active_profile_bonded;
-    for (int i = 0; i < NICEVIEW_PROFILE_COUNT; ++i) {
-        widget->state.profiles_connected[i] = state->profiles_connected[i];
-        widget->state.profiles_bonded[i] = state->profiles_bonded[i];
-    }
+
 
     draw_top(widget->obj, &widget->state);
     draw_middle(widget->obj, &widget->state);
@@ -260,17 +248,13 @@ static void output_status_update_cb(struct output_status_state state) {
 }
 
 static struct output_status_state output_status_get_state(const zmk_event_t *_eh) {
-    struct output_status_state state = {
+    return (struct output_status_state){
         .selected_endpoint = zmk_endpoints_selected(),
         .active_profile_index = zmk_ble_active_profile_index(),
         .active_profile_connected = zmk_ble_active_profile_is_connected(),
         .active_profile_bonded = !zmk_ble_active_profile_is_open(),
     };
-    for (int i = 0; i < MIN(NICEVIEW_PROFILE_COUNT, ZMK_BLE_PROFILE_COUNT); ++i) {
-        state.profiles_connected[i] = zmk_ble_profile_is_connected(i);
-        state.profiles_bonded[i] = !zmk_ble_profile_is_open(i);
-    }
-    return state;
+    
 }
 
 ZMK_DISPLAY_WIDGET_LISTENER(widget_output_status, struct output_status_state,
@@ -333,13 +317,13 @@ int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     widget->obj = lv_obj_create(parent);
     lv_obj_set_size(widget->obj, 144, 72);
     lv_obj_t *top = lv_canvas_create(widget->obj);
-    lv_obj_align(top, LV_ALIGN_TOP_RIGHT, 0, 0);
+    lv_obj_align(top, LV_ALIGN_BOTTOM_LEFT, 0, 0);
     lv_canvas_set_buffer(top, widget->cbuf, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
     lv_obj_t *middle = lv_canvas_create(widget->obj);
-    lv_obj_align(middle, LV_ALIGN_TOP_LEFT, 24, 0);
+    lv_obj_align(middle, LV_ALIGN_TOP_LEFT, 58, 0);
     lv_canvas_set_buffer(middle, widget->cbuf2, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
     lv_obj_t *bottom = lv_canvas_create(widget->obj);
-    lv_obj_align(bottom, LV_ALIGN_TOP_LEFT, -44, 0);
+    lv_obj_align(bottom, LV_ALIGN_TOP_LEFT, 130, 0);
     lv_canvas_set_buffer(bottom, widget->cbuf3, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
 
     sys_slist_append(&widgets, &widget->node);
