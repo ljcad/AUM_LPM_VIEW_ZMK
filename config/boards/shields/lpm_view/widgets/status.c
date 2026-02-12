@@ -33,12 +33,11 @@ struct output_status_state {
     int active_profile_index;
     bool active_profile_connected;
     bool active_profile_bonded;
-    bool profiles_connected[NICEVIEW_PROFILE_COUNT];
-    bool profiles_bonded[NICEVIEW_PROFILE_COUNT];
+
 };
 
 struct layer_status_state {
-    zmk_keymap_layer_index_t index;
+    uint8_t index;
     const char *label;
 };
 
@@ -144,11 +143,11 @@ static void draw_middle(lv_obj_t *widget, const struct status_state *state) {
     lv_canvas_fill_bg(canvas, LVGL_BACKGROUND, LV_OPA_COVER);
 
     // Draw circles
-    int circle_offsets[NICEVIEW_PROFILE_COUNT][2] = {
+    int circle_offsets[5][2] = {
         {13, 13}, {55, 13}, {34, 34}, {13, 55}, {55, 55},
     };
 
-    for (int i = 0; i < NICEVIEW_PROFILE_COUNT; i++) {
+    for (int i = 0; i < 5; i++) {
         bool selected = i == state->active_profile_index;
 
         if (state->profiles_connected[i]) {
@@ -245,10 +244,7 @@ static void set_output_status(struct zmk_widget_status *widget,
     widget->state.active_profile_index = state->active_profile_index;
     widget->state.active_profile_connected = state->active_profile_connected;
     widget->state.active_profile_bonded = state->active_profile_bonded;
-    for (int i = 0; i < NICEVIEW_PROFILE_COUNT; ++i) {
-        widget->state.profiles_connected[i] = state->profiles_connected[i];
-        widget->state.profiles_bonded[i] = state->profiles_bonded[i];
-    }
+
 
     draw_top(widget->obj, &widget->state);
     draw_middle(widget->obj, &widget->state);
@@ -260,17 +256,13 @@ static void output_status_update_cb(struct output_status_state state) {
 }
 
 static struct output_status_state output_status_get_state(const zmk_event_t *_eh) {
-    struct output_status_state state = {
+    return (struct output_status_state){
         .selected_endpoint = zmk_endpoints_selected(),
         .active_profile_index = zmk_ble_active_profile_index(),
         .active_profile_connected = zmk_ble_active_profile_is_connected(),
         .active_profile_bonded = !zmk_ble_active_profile_is_open(),
     };
-    for (int i = 0; i < MIN(NICEVIEW_PROFILE_COUNT, ZMK_BLE_PROFILE_COUNT); ++i) {
-        state.profiles_connected[i] = zmk_ble_profile_is_connected(i);
-        state.profiles_bonded[i] = !zmk_ble_profile_is_open(i);
-    }
-    return state;
+
 }
 
 ZMK_DISPLAY_WIDGET_LISTENER(widget_output_status, struct output_status_state,
@@ -297,9 +289,8 @@ static void layer_status_update_cb(struct layer_status_state state) {
 }
 
 static struct layer_status_state layer_status_get_state(const zmk_event_t *eh) {
-    zmk_keymap_layer_index_t index = zmk_keymap_highest_layer_active();
-    return (struct layer_status_state){
-        .index = index, .label = zmk_keymap_layer_name(zmk_keymap_layer_index_to_id(index))};
+    uint8_t index = zmk_keymap_highest_layer_active();
+    return (struct layer_status_state){.index = index, .label = zmk_keymap_layer_name(index)};
 }
 
 ZMK_DISPLAY_WIDGET_LISTENER(widget_layer_status, struct layer_status_state, layer_status_update_cb,
