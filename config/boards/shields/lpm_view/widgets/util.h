@@ -8,9 +8,7 @@
 #include <lvgl.h>
 #include <zmk/endpoints.h>
 
-#define NICEVIEW_PROFILE_COUNT 5
-
-#define CANVAS_SIZE 68
+#define CANVAS_SIZE 72
 #define CANVAS_COLOR_FORMAT LV_COLOR_FORMAT_L8 // smallest type supported by sw_rotate
 #define CANVAS_BUF_SIZE                                                                            \
     LV_CANVAS_BUF_SIZE(CANVAS_SIZE, CANVAS_SIZE, LV_COLOR_FORMAT_GET_BPP(CANVAS_COLOR_FORMAT),     \
@@ -29,8 +27,6 @@ struct status_state {
     int active_profile_index;
     bool active_profile_connected;
     bool active_profile_bonded;
-    bool profiles_connected[NICEVIEW_PROFILE_COUNT];
-    bool profiles_bonded[NICEVIEW_PROFILE_COUNT];
     uint8_t layer_index;
     const char *layer_label;
     uint8_t wpm[10];
