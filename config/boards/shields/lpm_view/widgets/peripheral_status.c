@@ -125,10 +125,10 @@ static void draw_middle(lv_obj_t *widget, const struct status_state *state) {
     for (int i = 0; i < NICEVIEW_PROFILE_COUNT; i++) {
         bool selected = i == zmk_ble_active_profile_index();
 
-        if (state->profiles_connected[i]) {
+        if (zmk_ble_profile_is_connected(i)) {
             canvas_draw_arc(canvas, circle_offsets[i][0], circle_offsets[i][1], 13, 0, 360,
                             &arc_dsc);
-        } else if (state->profiles_bonded[i]) {
+        } else if (zmk_ble_profile_is_bonded(i)) {
             const int segments = 8;
             const int gap = 20;
             for (int j = 0; j < segments; ++j)
