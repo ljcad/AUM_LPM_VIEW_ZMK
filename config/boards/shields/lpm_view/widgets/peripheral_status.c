@@ -67,27 +67,9 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
     draw_battery(canvas, state);
 
     // Draw output status
-    char output_text[10] = {};
+    canvas_draw_text(canvas, 0, 0, CANVAS_SIZE, &label_dsc,
+                     state->connected ? LV_SYMBOL_WIFI : LV_SYMBOL_CLOSE);
 
-    struct zmk_endpoint_instance endpoint = zmk_endpoints_selected();
-    switch (endpoint.transport) {
-    case ZMK_TRANSPORT_USB:
-        strcat(output_text, LV_SYMBOL_USB);
-        break;
-    case ZMK_TRANSPORT_BLE:
-        if (state->active_profile_bonded) {
-            if (state->active_profile_connected) {
-                strcat(output_text, LV_SYMBOL_WIFI);
-            } else {
-                strcat(output_text, LV_SYMBOL_CLOSE);
-            }
-        } else {
-            strcat(output_text, LV_SYMBOL_SETTINGS);
-        }
-        break;
-    }
-
-    canvas_draw_text(canvas, 0, 0, CANVAS_SIZE, &label_dsc, output_text);
 
     // Draw WPM
     canvas_draw_rect(canvas, 0, 21, 70, 32, &rect_white_dsc);
