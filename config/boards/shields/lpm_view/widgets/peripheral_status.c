@@ -38,17 +38,6 @@ struct output_status_state {
 };
 
 
-static void set_layer_status(struct zmk_widget_status *widget, uint8_t index) {
-    widget->state.layer_index = index;
-    draw_bottom(widget->obj, &widget->state);
-}
-
-static void set_output_status(struct zmk_widget_status *widget, struct zmk_endpoint_instance endpoint) {
-    // 即使不把 endpoint 存进 state 也没关系，因为 draw_top 现在直接从 API 读
-    draw_top(widget->obj, &widget->state);
-}
-
-
 struct layer_status_state {
     zmk_keymap_layer_index_t index;
     const char *label;
