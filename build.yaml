@@ -4,7 +4,9 @@ include:
     snippet: studio-rpc-usb-uart
     cmake-args: -DCONFIG_ZMK_STUDIO=y
   - board: nice_nano
-    shield: lily58_right
+    shield: lily58_right lpm_view_adapter lpm_view
+  - board: nice_nano
+    shield: settings_reset
 
 
 
