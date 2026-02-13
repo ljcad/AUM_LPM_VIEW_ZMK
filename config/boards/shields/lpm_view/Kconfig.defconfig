@@ -2,6 +2,19 @@
 # SPDX-License-Identifier: MIT
 
 if SHIELD_LPM_VIEW
+
+# 强制开启 mono 主题支持
+config LV_USE_THEME_MONO
+    default y
+
+# 确保图片和画布支持
+config LV_USE_IMAGE
+    default y
+
+config LV_USE_CANVAS
+    default y
+
+
 config LV_Z_VDB_SIZE
     default 100
 
