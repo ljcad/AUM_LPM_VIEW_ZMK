@@ -163,15 +163,22 @@ static void draw_bottom(lv_obj_t *widget, const struct status_state *state) {
     // Fill background
     lv_canvas_fill_bg(canvas, LVGL_BACKGROUND, LV_OPA_COVER);
 
-    // Draw layer
-    if (state->layer_label == NULL || strlen(state->layer_label) == 0) {
-        char text[10] = {};
+    // --- Draw layer (Updated for new ZMK API) ---
+    // 获取当前层索引
+    uint8_t active_layer_index = zmk_keymap_active_layer();
+    // 获取当前层名称（如果在 keymap 中定义了 label）
+    const char *layer_name = zmk_keymap_layer_name(active_layer_index);
 
-        sprintf(text, "LAYER %i", state->layer_index);
+    if (layer_name == NULL || strlen(layer_name) == 0) {
+        char text[12] = {}; // 稍微加大缓冲区防止溢出
+
+        // 将 state->layer_index 替换为 active_layer_index
+        snprintf(text, sizeof(text), "LAYER %i", active_layer_index);
 
         canvas_draw_text(canvas, 0, 0, 72, &label_dsc, text);
     } else {
-        canvas_draw_text(canvas, 0, 0, 72, &label_dsc, state->layer_label);
+        // 使用动态获取到的 layer_name 替换 state->layer_label
+        canvas_draw_text(canvas, 0, 0, 72, &label_dsc, layer_name);
     }
 
     // Rotate canvas
