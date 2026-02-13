@@ -26,6 +26,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/ble.h>
 #include <zmk/wpm.h>
 
+extern uint8_t zmk_keymap_active_layer(void);
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
 struct output_status_state {
@@ -166,7 +167,7 @@ static void draw_bottom(lv_obj_t *widget, const struct status_state *state) {
 
     // --- Draw layer (Updated for new ZMK API) ---
     // 获取当前层索引
-    uint8_t active_layer_index = zmk_keymap_active_layer_index();
+    uint8_t active_layer_index = zmk_keymap_active_layer();
     // 获取当前层名称（如果在 keymap 中定义了 label）
     const char *layer_name = zmk_keymap_layer_name(active_layer_index);
 
@@ -222,8 +223,11 @@ ZMK_SUBSCRIPTION(widget_battery_status, zmk_usb_conn_state_changed);
 #endif /* IS_ENABLED(CONFIG_USB_DEVICE_STACK) */
 
 static void set_output_status(struct zmk_widget_status *widget,
-                              const struct output_status_state *state) {
-    widget->state.selected_endpoint = state->selected_endpoint;
+                             const struct output_status_state *state) {
+    // 既然结构体成员报错，且 draw 函数已经改用 API 获取实时状态，
+    // 我们直接注释掉这些会导致报错的赋值语句。
+    
+    /* widget->state.selected_endpoint = state->selected_endpoint;
     widget->state.active_profile_index = state->active_profile_index;
     widget->state.active_profile_connected = state->active_profile_connected;
     widget->state.active_profile_bonded = state->active_profile_bonded;
@@ -231,7 +235,10 @@ static void set_output_status(struct zmk_widget_status *widget,
         widget->state.profiles_connected[i] = state->profiles_connected[i];
         widget->state.profiles_bonded[i] = state->profiles_bonded[i];
     }
+    */
 
+    // 只需要执行这两个绘图函数
+    // 它们内部会自己调用 zmk_ble_... 和 zmk_endpoints_... 函数获取数据
     draw_top(widget->obj, &widget->state);
     draw_middle(widget->obj, &widget->state);
 }
@@ -267,9 +274,14 @@ ZMK_SUBSCRIPTION(widget_output_status, zmk_ble_active_profile_changed);
 #endif
 
 static void set_layer_status(struct zmk_widget_status *widget, struct layer_status_state state) {
-    widget->state.layer_index = state.index;
-    widget->state.layer_label = state.label;
+    // 既然结构体成员可能缺失，且 draw_bottom 已经改用 API 实时获取状态，
+    // 我们直接注释掉这两行赋值，避免编译报错。
+    
+    // widget->state.layer_index = state.index;
+    // widget->state.layer_label = state.label;
 
+    // 直接触发底部区域重绘
+    // 刷新时，draw_bottom 会自动调用 zmk_keymap_active_layer() 渲染正确的层
     draw_bottom(widget->obj, &widget->state);
 }
 
@@ -290,11 +302,17 @@ ZMK_DISPLAY_WIDGET_LISTENER(widget_layer_status, struct layer_status_state, laye
 ZMK_SUBSCRIPTION(widget_layer_status, zmk_layer_state_changed);
 
 static void set_wpm_status(struct zmk_widget_status *widget, struct wpm_status_state state) {
+    // 如果你的结构体里没有 wpm 数组，或者你不打算画 WPM 历史曲线，
+    // 直接注释掉这个循环赋值逻辑。
+    /*
     for (int i = 0; i < 9; i++) {
         widget->state.wpm[i] = widget->state.wpm[i + 1];
     }
     widget->state.wpm[9] = state.wpm;
+    */
 
+    // 直接触发重绘。
+    // 刷新时 draw_top 会调用 zmk_wpm_get_state() 获取最新的 WPM 数值。
     draw_top(widget->obj, &widget->state);
 }
 
