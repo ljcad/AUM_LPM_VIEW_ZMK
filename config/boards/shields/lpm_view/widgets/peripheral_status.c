@@ -83,12 +83,8 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
     snprintf(wpm_text, sizeof(wpm_text), "%d", current_wpm);
     canvas_draw_text(canvas, 42, 42, 24, &label_dsc_wpm, wpm_text);
 
-    int max = current_wpm;
-    int min = current_wpm;
-
     // 因为 state->wpm 已经不存在了，我们将循环逻辑简化
     // 如果你依然想画线，这里假设 10 个点都是当前的 WPM
-    int range = 1; 
 
     lv_point_t points[10];
     for (int i = 0; i < 10; i++) {
@@ -127,7 +123,7 @@ static void draw_middle(lv_obj_t *widget, const struct status_state *state) {
     };
 
     for (int i = 0; i < NICEVIEW_PROFILE_COUNT; i++) {
-        bool selected = i == state->active_profile_index;
+        bool selected = i == zmk_ble_active_profile_index();
 
         if (state->profiles_connected[i]) {
             canvas_draw_arc(canvas, circle_offsets[i][0], circle_offsets[i][1], 13, 0, 360,
