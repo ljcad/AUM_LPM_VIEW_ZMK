@@ -37,11 +37,6 @@ struct output_status_state {
     bool profiles_bonded[NICEVIEW_PROFILE_COUNT];
 };
 
-// 紧接着是原有的 widget 结构体定义（通常代码里已经有了，检查一下）
-struct zmk_widget_status {
-    lv_obj_t *obj;
-    struct status_state state;
-};
 
 static void set_layer_status(struct zmk_widget_status *widget, uint8_t index) {
     widget->state.layer_index = index;
