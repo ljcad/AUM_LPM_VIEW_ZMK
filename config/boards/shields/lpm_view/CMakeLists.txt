@@ -1,15 +1,13 @@
+# 这里的 if 条件保持你原来的不变
 if(CONFIG_ZMK_DISPLAY AND CONFIG_NICE_VIEW_WIDGET_STATUS)
-  # 初始化库
+  # 这一行非常重要，它初始化当前目录的库
   zephyr_library()
 
   zephyr_library_include_directories(${CMAKE_SOURCE_DIR}/include)
-  
-  # 添加公共源文件
   zephyr_library_sources(custom_status_screen.c)
   zephyr_library_sources(widgets/bolt.c)
   zephyr_library_sources(widgets/util.c)
 
-  # 根据角色添加不同的源文件
   if(NOT CONFIG_ZMK_SPLIT OR CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
     zephyr_library_sources(widgets/status.c)
   else()
@@ -17,9 +15,7 @@ if(CONFIG_ZMK_DISPLAY AND CONFIG_NICE_VIEW_WIDGET_STATUS)
     zephyr_library_sources(widgets/peripheral_status.c)
   endif()
 
-  # --- 关键修改：将本库链接到 ZMK 的主 app 逻辑 ---
-  # 只有链接了 app，编译器才能找到 zmk_ble_... 和 zmk_wpm_... 等函数的实现
+  # 强制将这个 Shield 库与 ZMK 的核心 app 链接
+  # 这样 ld (链接器) 才能找到 zmk_ble_... 等函数
   zephyr_library_link_libraries(app)
-
 endif()
-
