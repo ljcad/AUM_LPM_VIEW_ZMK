@@ -107,11 +107,22 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
 
 static void draw_middle(lv_obj_t *widget, const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget, 1);
-    // ... (DSC 初始化保持不变) ...
+
+    lv_draw_rect_dsc_t rect_black_dsc;
+    init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
+    lv_draw_rect_dsc_t rect_white_dsc;
+    init_rect_dsc(&rect_white_dsc, LVGL_FOREGROUND);
+    
+    // 关键：这几行必须在函数开头
     lv_draw_arc_dsc_t arc_dsc;
     init_arc_dsc(&arc_dsc, LVGL_FOREGROUND, 2);
     lv_draw_arc_dsc_t arc_dsc_filled;
     init_arc_dsc(&arc_dsc_filled, LVGL_FOREGROUND, 9);
+    
+    lv_draw_label_dsc_t label_dsc;
+    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_CENTER);
+    lv_draw_label_dsc_t label_dsc_black;
+    init_label_dsc(&label_dsc_black, LVGL_BACKGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_CENTER);
     
     lv_canvas_fill_bg(canvas, LVGL_BACKGROUND, LV_OPA_COVER);
 
@@ -151,11 +162,19 @@ static void draw_middle(lv_obj_t *widget, const struct status_state *state) {
 
 static void draw_bottom(lv_obj_t *widget, const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget, 2);
-    // ... (DSC 初始化) ...
 
+    lv_draw_rect_dsc_t rect_black_dsc;
+    init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
+    
+    // --- 补齐丢失的声明 ---
+    lv_draw_label_dsc_t label_dsc;
+    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_CENTER);
+    // ----------------------
+
+    // Fill background
     lv_canvas_fill_bg(canvas, LVGL_BACKGROUND, LV_OPA_COVER);
 
-    // --- Layer 保护区 ---
+    // --- Draw layer (带宏保护) ---
     uint8_t active_layer_index = 0;
     const char *layer_name = NULL;
 
@@ -165,13 +184,14 @@ static void draw_bottom(lv_obj_t *widget, const struct status_state *state) {
 #endif
 
     if (layer_name == NULL || strlen(layer_name) == 0) {
-        char text[12] = {};
+        char text[12] = {}; 
         snprintf(text, sizeof(text), "LAYER %i", active_layer_index);
         canvas_draw_text(canvas, 0, 0, 72, &label_dsc, text);
     } else {
         canvas_draw_text(canvas, 0, 0, 72, &label_dsc, layer_name);
     }
 
+    // Rotate canvas
     rotate_canvas(canvas);
 }
 
