@@ -71,35 +71,30 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
                      state->connected ? LV_SYMBOL_WIFI : LV_SYMBOL_CLOSE);
 
 
-    // Draw WPM
+// Draw WPM
     canvas_draw_rect(canvas, 0, 21, 70, 32, &rect_white_dsc);
     canvas_draw_rect(canvas, 1, 22, 66, 30, &rect_black_dsc);
 
+    // 获取当前 WPM 数值
+    uint8_t current_wpm = zmk_wpm_get_state();
+
     char wpm_text[6] = {};
-    snprintf(wpm_text, sizeof(wpm_text), "%d", state->wpm[9]);
+    // 将 state->wpm[9] 替换为 current_wpm
+    snprintf(wpm_text, sizeof(wpm_text), "%d", current_wpm);
     canvas_draw_text(canvas, 42, 42, 24, &label_dsc_wpm, wpm_text);
 
-    int max = 0;
-    int min = 256;
+    int max = current_wpm;
+    int min = current_wpm;
 
-    for (int i = 0; i < 10; i++) {
-        if (state->wpm[i] > max) {
-            max = state->wpm[i];
-        }
-        if (state->wpm[i] < min) {
-            min = state->wpm[i];
-        }
-    }
-
-    int range = max - min;
-    if (range == 0) {
-        range = 1;
-    }
+    // 因为 state->wpm 已经不存在了，我们将循环逻辑简化
+    // 如果你依然想画线，这里假设 10 个点都是当前的 WPM
+    int range = 1; 
 
     lv_point_t points[10];
     for (int i = 0; i < 10; i++) {
         points[i].x = 2 + i * 7;
-        points[i].y = 50 - (state->wpm[i] - min) * 36 / range;
+        // 既然没有历史数据，y 轴固定在中间即可
+        points[i].y = 50; 
     }
     canvas_draw_line(canvas, points, 10, &line_dsc);
 
