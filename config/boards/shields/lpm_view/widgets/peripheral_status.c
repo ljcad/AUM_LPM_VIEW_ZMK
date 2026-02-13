@@ -23,11 +23,6 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/ble.h>
 #include <zmk/wpm.h>
 
-// 修正：从手端可能找不到这个函数，声明为外部或使用宏保护
-#if IS_ENABLED(CONFIG_ZMK_KEYMAP)
-extern uint8_t zmk_keymap_active_layer(void);
-#endif
-
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
 struct output_status_state {
@@ -38,7 +33,6 @@ struct output_status_state {
     bool profiles_connected[NICEVIEW_PROFILE_COUNT];
     bool profiles_bonded[NICEVIEW_PROFILE_COUNT];
 };
-
 
 struct layer_status_state {
     zmk_keymap_layer_index_t index;
@@ -52,38 +46,27 @@ struct wpm_status_state {
 static void draw_top(lv_obj_t *widget, const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget, 0);
 
-    // --- 补齐丢失的声明 ---
     lv_draw_label_dsc_t label_dsc;
     init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_RIGHT);
-    
     lv_draw_label_dsc_t label_dsc_wpm;
     init_label_dsc(&label_dsc_wpm, LVGL_FOREGROUND, &lv_font_unscii_8, LV_TEXT_ALIGN_RIGHT);
-    
     lv_draw_rect_dsc_t rect_black_dsc;
     init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
-    
     lv_draw_rect_dsc_t rect_white_dsc;
     init_rect_dsc(&rect_white_dsc, LVGL_FOREGROUND);
-    
     lv_draw_line_dsc_t line_dsc;
     init_line_dsc(&line_dsc, LVGL_FOREGROUND, 1);
-    // ----------------------
 
-    // Fill background
     lv_canvas_fill_bg(canvas, LVGL_BACKGROUND, LV_OPA_COVER);
-
-    // Draw battery
     draw_battery(canvas, state);
 
-    // Draw output status
     canvas_draw_text(canvas, 0, 0, CANVAS_SIZE, &label_dsc,
                      state->connected ? LV_SYMBOL_WIFI : LV_SYMBOL_CLOSE);
 
-    // Draw WPM 装饰框
+    // Draw WPM
     canvas_draw_rect(canvas, 0, 21, 70, 32, &rect_white_dsc);
     canvas_draw_rect(canvas, 1, 22, 66, 30, &rect_black_dsc);
 
-    // 获取当前 WPM 数值（带宏保护，防止从手报错）
     uint8_t current_wpm = 0;
 #if IS_ENABLED(CONFIG_ZMK_WPM)
     current_wpm = zmk_wpm_get_state();
@@ -93,7 +76,6 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
     snprintf(wpm_text, sizeof(wpm_text), "%d", current_wpm);
     canvas_draw_text(canvas, 42, 42, 24, &label_dsc_wpm, wpm_text);
 
-    // 画 WPM 基准线
     lv_point_t points[10];
     for (int i = 0; i < 10; i++) {
         points[i].x = 2 + i * 7;
@@ -101,7 +83,6 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
     }
     canvas_draw_line(canvas, points, 10, &line_dsc);
 
-    // Rotate canvas
     rotate_canvas(canvas);
 }
 
@@ -112,18 +93,15 @@ static void draw_middle(lv_obj_t *widget, const struct status_state *state) {
     init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
     lv_draw_rect_dsc_t rect_white_dsc;
     init_rect_dsc(&rect_white_dsc, LVGL_FOREGROUND);
-    
-    // 关键：这几行必须在函数开头
     lv_draw_arc_dsc_t arc_dsc;
     init_arc_dsc(&arc_dsc, LVGL_FOREGROUND, 2);
     lv_draw_arc_dsc_t arc_dsc_filled;
     init_arc_dsc(&arc_dsc_filled, LVGL_FOREGROUND, 9);
-    
     lv_draw_label_dsc_t label_dsc;
     init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_CENTER);
     lv_draw_label_dsc_t label_dsc_black;
     init_label_dsc(&label_dsc_black, LVGL_BACKGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_CENTER);
-    
+
     lv_canvas_fill_bg(canvas, LVGL_BACKGROUND, LV_OPA_COVER);
 
     int circle_offsets[NICEVIEW_PROFILE_COUNT][2] = {
@@ -131,7 +109,6 @@ static void draw_middle(lv_obj_t *widget, const struct status_state *state) {
     };
 
     for (int i = 0; i < NICEVIEW_PROFILE_COUNT; i++) {
-        // --- BLE 保护区 ---
         bool selected = false;
         bool connected = false;
         bool open = true;
@@ -145,36 +122,33 @@ static void draw_middle(lv_obj_t *widget, const struct status_state *state) {
         if (connected) {
             canvas_draw_arc(canvas, circle_offsets[i][0], circle_offsets[i][1], 13, 0, 360, &arc_dsc);
         } else if (!open) {
-            // 画虚线圆表示已配对但未连接
             const int segments = 8;
             for (int j = 0; j < segments; ++j)
-                canvas_draw_arc(canvas, circle_offsets[i][0], circle_offsets[i][1], 13, 
-                                360./segments*j + 10, 360./segments*(j+1) - 10, &arc_dsc);
+                canvas_draw_arc(canvas, circle_offsets[i][0], circle_offsets[i][1], 13,
+                                360. / segments * j + 10, 360. / segments * (j + 1) - 10, &arc_dsc);
         }
 
         if (selected) {
             canvas_draw_arc(canvas, circle_offsets[i][0], circle_offsets[i][1], 9, 0, 359, &arc_dsc_filled);
         }
-        // ... (绘制数字 label 部分保持不变) ...
+
+        char label[2];
+        snprintf(label, sizeof(label), "%d", i + 1);
+        canvas_draw_text(canvas, circle_offsets[i][0] - 8, circle_offsets[i][1] - 10, 16,
+                         (selected ? &label_dsc_black : &label_dsc), label);
     }
+
     rotate_canvas(canvas);
 }
 
 static void draw_bottom(lv_obj_t *widget, const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget, 2);
 
-    lv_draw_rect_dsc_t rect_black_dsc;
-    init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
-    
-    // --- 补齐丢失的声明 ---
     lv_draw_label_dsc_t label_dsc;
     init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_CENTER);
-    // ----------------------
 
-    // Fill background
     lv_canvas_fill_bg(canvas, LVGL_BACKGROUND, LV_OPA_COVER);
 
-    // --- Draw layer (带宏保护) ---
     uint8_t active_layer_index = 0;
     const char *layer_name = NULL;
 
@@ -184,25 +158,21 @@ static void draw_bottom(lv_obj_t *widget, const struct status_state *state) {
 #endif
 
     if (layer_name == NULL || strlen(layer_name) == 0) {
-        char text[12] = {}; 
+        char text[12] = {};
         snprintf(text, sizeof(text), "LAYER %i", active_layer_index);
         canvas_draw_text(canvas, 0, 0, 72, &label_dsc, text);
     } else {
         canvas_draw_text(canvas, 0, 0, 72, &label_dsc, layer_name);
     }
 
-    // Rotate canvas
     rotate_canvas(canvas);
 }
 
-static void set_battery_status(struct zmk_widget_status *widget,
-                               struct battery_status_state state) {
+static void set_battery_status(struct zmk_widget_status *widget, struct battery_status_state state) {
 #if IS_ENABLED(CONFIG_USB_DEVICE_STACK)
     widget->state.charging = state.usb_present;
-#endif /* IS_ENABLED(CONFIG_USB_DEVICE_STACK) */
-
+#endif
     widget->state.battery = state.level;
-
     draw_top(widget->obj, &widget->state);
 }
 
@@ -213,40 +183,23 @@ static void battery_status_update_cb(struct battery_status_state state) {
 
 static struct battery_status_state battery_status_get_state(const zmk_event_t *eh) {
     const struct zmk_battery_state_changed *ev = as_zmk_battery_state_changed(eh);
-
     return (struct battery_status_state){
         .level = (ev != NULL) ? ev->state_of_charge : zmk_battery_state_of_charge(),
 #if IS_ENABLED(CONFIG_USB_DEVICE_STACK)
         .usb_present = zmk_usb_is_powered(),
-#endif /* IS_ENABLED(CONFIG_USB_DEVICE_STACK) */
+#endif
     };
 }
 
-ZMK_DISPLAY_WIDGET_LISTENER(widget_battery_status, struct battery_status_state,
+// 修改监听器名称以避免重复定义
+ZMK_DISPLAY_WIDGET_LISTENER(lpm_widget_battery_status, struct battery_status_state,
                             battery_status_update_cb, battery_status_get_state)
-
-ZMK_SUBSCRIPTION(widget_battery_status, zmk_battery_state_changed);
+ZMK_SUBSCRIPTION(lpm_widget_battery_status, zmk_battery_state_changed);
 #if IS_ENABLED(CONFIG_USB_DEVICE_STACK)
-ZMK_SUBSCRIPTION(widget_battery_status, zmk_usb_conn_state_changed);
-#endif /* IS_ENABLED(CONFIG_USB_DEVICE_STACK) */
+ZMK_SUBSCRIPTION(lpm_widget_battery_status, zmk_usb_conn_state_changed);
+#endif
 
-static void set_output_status(struct zmk_widget_status *widget,
-                             const struct output_status_state *state) {
-    // 既然结构体成员报错，且 draw 函数已经改用 API 获取实时状态，
-    // 我们直接注释掉这些会导致报错的赋值语句。
-    
-    /* widget->state.selected_endpoint = state->selected_endpoint;
-    widget->state.active_profile_index = state->active_profile_index;
-    widget->state.active_profile_connected = state->active_profile_connected;
-    widget->state.active_profile_bonded = state->active_profile_bonded;
-    for (int i = 0; i < NICEVIEW_PROFILE_COUNT; ++i) {
-        widget->state.profiles_connected[i] = state->profiles_connected[i];
-        widget->state.profiles_bonded[i] = state->profiles_bonded[i];
-    }
-    */
-
-    // 只需要执行这两个绘图函数
-    // 它们内部会自己调用 zmk_ble_... 和 zmk_endpoints_... 函数获取数据
+static void set_output_status(struct zmk_widget_status *widget, const struct output_status_state *state) {
     draw_top(widget->obj, &widget->state);
     draw_middle(widget->obj, &widget->state);
 }
@@ -262,7 +215,7 @@ static struct output_status_state output_status_get_state(const zmk_event_t *_eh
     state.selected_endpoint = zmk_endpoint_get_selected();
     state.active_profile_index = zmk_ble_active_profile_index();
     state.active_profile_connected = zmk_ble_active_profile_is_connected();
-    state.active_profile_bonded = !zmk_ble_active_profile_is_open();
+    state.active_profile_bonded = !zmk_ble_profile_is_open(zmk_ble_active_profile_index());
     for (int i = 0; i < MIN(NICEVIEW_PROFILE_COUNT, ZMK_BLE_PROFILE_COUNT); ++i) {
         state.profiles_connected[i] = zmk_ble_profile_is_connected(i);
         state.profiles_bonded[i] = !zmk_ble_profile_is_open(i);
@@ -271,26 +224,17 @@ static struct output_status_state output_status_get_state(const zmk_event_t *_eh
     return state;
 }
 
-ZMK_DISPLAY_WIDGET_LISTENER(widget_output_status, struct output_status_state,
+ZMK_DISPLAY_WIDGET_LISTENER(lpm_widget_output_status, struct output_status_state,
                             output_status_update_cb, output_status_get_state)
-ZMK_SUBSCRIPTION(widget_output_status, zmk_endpoint_changed);
-
+ZMK_SUBSCRIPTION(lpm_widget_output_status, zmk_endpoint_changed);
 #if IS_ENABLED(CONFIG_USB_DEVICE_STACK)
-ZMK_SUBSCRIPTION(widget_output_status, zmk_usb_conn_state_changed);
+ZMK_SUBSCRIPTION(lpm_widget_output_status, zmk_usb_conn_state_changed);
 #endif
-#if defined(CONFIG_ZMK_BLE)
-ZMK_SUBSCRIPTION(widget_output_status, zmk_ble_active_profile_changed);
+#if IS_ENABLED(CONFIG_ZMK_BLE)
+ZMK_SUBSCRIPTION(lpm_widget_output_status, zmk_ble_active_profile_changed);
 #endif
 
 static void set_layer_status(struct zmk_widget_status *widget, struct layer_status_state state) {
-    // 既然结构体成员可能缺失，且 draw_bottom 已经改用 API 实时获取状态，
-    // 我们直接注释掉这两行赋值，避免编译报错。
-    
-    // widget->state.layer_index = state.index;
-    // widget->state.layer_label = state.label;
-
-    // 直接触发底部区域重绘
-    // 刷新时，draw_bottom 会自动调用 zmk_keymap_active_layer() 渲染正确的层
     draw_bottom(widget->obj, &widget->state);
 }
 
@@ -300,28 +244,23 @@ static void layer_status_update_cb(struct layer_status_state state) {
 }
 
 static struct layer_status_state layer_status_get_state(const zmk_event_t *eh) {
-    zmk_keymap_layer_index_t index = zmk_keymap_highest_layer_active();
+    zmk_keymap_layer_index_t index = 0;
+#if IS_ENABLED(CONFIG_ZMK_KEYMAP)
+    index = zmk_keymap_highest_layer_active();
+#endif
     return (struct layer_status_state){
-        .index = index, .label = zmk_keymap_layer_name(zmk_keymap_layer_index_to_id(index))};
+        .index = index, 
+        .label = zmk_keymap_layer_name(index)
+    };
 }
 
-ZMK_DISPLAY_WIDGET_LISTENER(widget_layer_status, struct layer_status_state, layer_status_update_cb,
-                            layer_status_get_state)
-
-ZMK_SUBSCRIPTION(widget_layer_status, zmk_layer_state_changed);
+ZMK_DISPLAY_WIDGET_LISTENER(lpm_widget_layer_status, struct layer_status_state, 
+                            layer_status_update_cb, layer_status_get_state)
+#if IS_ENABLED(CONFIG_ZMK_KEYMAP)
+ZMK_SUBSCRIPTION(lpm_widget_layer_status, zmk_layer_state_changed);
+#endif
 
 static void set_wpm_status(struct zmk_widget_status *widget, struct wpm_status_state state) {
-    // 如果你的结构体里没有 wpm 数组，或者你不打算画 WPM 历史曲线，
-    // 直接注释掉这个循环赋值逻辑。
-    /*
-    for (int i = 0; i < 9; i++) {
-        widget->state.wpm[i] = widget->state.wpm[i + 1];
-    }
-    widget->state.wpm[9] = state.wpm;
-    */
-
-    // 直接触发重绘。
-    // 刷新时 draw_top 会调用 zmk_wpm_get_state() 获取最新的 WPM 数值。
     draw_top(widget->obj, &widget->state);
 }
 
@@ -331,31 +270,41 @@ static void wpm_status_update_cb(struct wpm_status_state state) {
 }
 
 struct wpm_status_state wpm_status_get_state(const zmk_event_t *eh) {
-    return (struct wpm_status_state){.wpm = zmk_wpm_get_state()};
-};
+    uint8_t wpm = 0;
+#if IS_ENABLED(CONFIG_ZMK_WPM)
+    wpm = zmk_wpm_get_state();
+#endif
+    return (struct wpm_status_state){.wpm = wpm};
+}
 
-ZMK_DISPLAY_WIDGET_LISTENER(widget_wpm_status, struct wpm_status_state, wpm_status_update_cb,
-                            wpm_status_get_state)
-ZMK_SUBSCRIPTION(widget_wpm_status, zmk_wpm_state_changed);
+ZMK_DISPLAY_WIDGET_LISTENER(lpm_widget_wpm_status, struct wpm_status_state, 
+                            wpm_status_update_cb, wpm_status_get_state)
+#if IS_ENABLED(CONFIG_ZMK_WPM)
+ZMK_SUBSCRIPTION(lpm_widget_wpm_status, zmk_wpm_state_changed);
+#endif
 
 int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     widget->obj = lv_obj_create(parent);
     lv_obj_set_size(widget->obj, 144, 72);
+    
     lv_obj_t *top = lv_canvas_create(widget->obj);
     lv_obj_align(top, LV_ALIGN_BOTTOM_LEFT, 0, 0);
     lv_canvas_set_buffer(top, widget->cbuf, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
+    
     lv_obj_t *middle = lv_canvas_create(widget->obj);
     lv_obj_align(middle, LV_ALIGN_TOP_LEFT, 58, 0);
     lv_canvas_set_buffer(middle, widget->cbuf2, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
+    
     lv_obj_t *bottom = lv_canvas_create(widget->obj);
     lv_obj_align(bottom, LV_ALIGN_TOP_LEFT, 130, 0);
     lv_canvas_set_buffer(bottom, widget->cbuf3, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
 
     sys_slist_append(&widgets, &widget->node);
-    widget_battery_status_init();
-    widget_output_status_init();
-    widget_layer_status_init();
-    widget_wpm_status_init();
+    
+    lpm_widget_battery_status_init();
+    lpm_widget_output_status_init();
+    lpm_widget_layer_status_init();
+    lpm_widget_wpm_status_init();
 
     return 0;
 }
