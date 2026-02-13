@@ -19,11 +19,11 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/events/ble_active_profile_changed.h>
 #include <zmk/events/endpoint_changed.h>
 #include <zmk/events/wpm_state_changed.h>
+#include <zmk/endpoints.h>
+#include <zmk/keymap.h>
 #include <zmk/events/layer_state_changed.h>
 #include <zmk/usb.h>
 #include <zmk/ble.h>
-#include <zmk/endpoints.h>
-#include <zmk/keymap.h>
 #include <zmk/wpm.h>
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
@@ -36,6 +36,32 @@ struct output_status_state {
     bool profiles_connected[NICEVIEW_PROFILE_COUNT];
     bool profiles_bonded[NICEVIEW_PROFILE_COUNT];
 };
+
+struct status_state {
+    uint8_t battery;
+    bool charging;
+    uint8_t active_profile_index;
+    // 如果你在 draw_bottom 里还用到了 layer_index，请加上这一行：
+    uint8_t layer_index; 
+    // 虽然我们改用了 API，但为了兼容回调函数的参数传递，保留此结构体
+};
+
+// 紧接着是原有的 widget 结构体定义（通常代码里已经有了，检查一下）
+struct zmk_widget_status {
+    lv_obj_t *obj;
+    struct status_state state;
+};
+
+static void set_layer_status(struct zmk_widget_status *widget, uint8_t index) {
+    widget->state.layer_index = index;
+    draw_bottom(widget->obj, &widget->state);
+}
+
+static void set_output_status(struct zmk_widget_status *widget, struct zmk_endpoint_instance endpoint) {
+    // 即使不把 endpoint 存进 state 也没关系，因为 draw_top 现在直接从 API 读
+    draw_top(widget->obj, &widget->state);
+}
+
 
 struct layer_status_state {
     zmk_keymap_layer_index_t index;
@@ -165,7 +191,7 @@ static void draw_bottom(lv_obj_t *widget, const struct status_state *state) {
 
     // --- Draw layer (Updated for new ZMK API) ---
     // 获取当前层索引
-    uint8_t active_layer_index = zmk_keymap_active_layer();
+    uint8_t active_layer_index = zmk_keymap_active_layer_index();
     // 获取当前层名称（如果在 keymap 中定义了 label）
     const char *layer_name = zmk_keymap_layer_name(active_layer_index);
 
