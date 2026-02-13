@@ -51,27 +51,39 @@ struct wpm_status_state {
 
 static void draw_top(lv_obj_t *widget, const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget, 0);
-    // ... (DSC 初始化保持不变) ...
+
+    // --- 补齐丢失的声明 ---
+    lv_draw_label_dsc_t label_dsc;
+    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_RIGHT);
+    
     lv_draw_label_dsc_t label_dsc_wpm;
     init_label_dsc(&label_dsc_wpm, LVGL_FOREGROUND, &lv_font_unscii_8, LV_TEXT_ALIGN_RIGHT);
-    lv_draw_line_dsc_t line_dsc;
-    init_line_dsc(&line_dsc, LVGL_FOREGROUND, 1);
+    
     lv_draw_rect_dsc_t rect_black_dsc;
     init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
+    
     lv_draw_rect_dsc_t rect_white_dsc;
     init_rect_dsc(&rect_white_dsc, LVGL_FOREGROUND);
+    
+    lv_draw_line_dsc_t line_dsc;
+    init_line_dsc(&line_dsc, LVGL_FOREGROUND, 1);
+    // ----------------------
 
+    // Fill background
     lv_canvas_fill_bg(canvas, LVGL_BACKGROUND, LV_OPA_COVER);
+
+    // Draw battery
     draw_battery(canvas, state);
 
-    // 只有开启了输出设置才画状态
+    // Draw output status
     canvas_draw_text(canvas, 0, 0, CANVAS_SIZE, &label_dsc,
                      state->connected ? LV_SYMBOL_WIFI : LV_SYMBOL_CLOSE);
 
-    // --- WPM 保护区 ---
+    // Draw WPM 装饰框
     canvas_draw_rect(canvas, 0, 21, 70, 32, &rect_white_dsc);
     canvas_draw_rect(canvas, 1, 22, 66, 30, &rect_black_dsc);
 
+    // 获取当前 WPM 数值（带宏保护，防止从手报错）
     uint8_t current_wpm = 0;
 #if IS_ENABLED(CONFIG_ZMK_WPM)
     current_wpm = zmk_wpm_get_state();
@@ -81,6 +93,7 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
     snprintf(wpm_text, sizeof(wpm_text), "%d", current_wpm);
     canvas_draw_text(canvas, 42, 42, 24, &label_dsc_wpm, wpm_text);
 
+    // 画 WPM 基准线
     lv_point_t points[10];
     for (int i = 0; i < 10; i++) {
         points[i].x = 2 + i * 7;
@@ -88,12 +101,17 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
     }
     canvas_draw_line(canvas, points, 10, &line_dsc);
 
+    // Rotate canvas
     rotate_canvas(canvas);
 }
 
 static void draw_middle(lv_obj_t *widget, const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget, 1);
     // ... (DSC 初始化保持不变) ...
+    lv_draw_arc_dsc_t arc_dsc;
+    init_arc_dsc(&arc_dsc, LVGL_FOREGROUND, 2);
+    lv_draw_arc_dsc_t arc_dsc_filled;
+    init_arc_dsc(&arc_dsc_filled, LVGL_FOREGROUND, 9);
     
     lv_canvas_fill_bg(canvas, LVGL_BACKGROUND, LV_OPA_COVER);
 
