@@ -43,9 +43,10 @@ struct wpm_status_state {
     uint8_t wpm;
 };
 
-// ====================================================================================
-// 绘图逻辑 (Draw Functions)
-// ====================================================================================
+// ==========================================
+// 核心宏定义：判断是否为具备核心逻辑的主手
+// ==========================================
+#define IS_CENTRAL (IS_ENABLED(CONFIG_ZMK_BLE) && !IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_PERIPHERAL))
 
 static void draw_top(lv_obj_t *widget, const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget, 0);
@@ -70,7 +71,7 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
     canvas_draw_rect(canvas, 1, 22, 66, 30, &rect_black_dsc);
 
     uint8_t current_wpm = 0;
-#if IS_ENABLED(CONFIG_ZMK_WPM) && !IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_PERIPHERAL)
+#if IS_ENABLED(CONFIG_ZMK_WPM) && IS_CENTRAL
     current_wpm = zmk_wpm_get_state();
 #endif
 
@@ -107,7 +108,7 @@ static void draw_middle(lv_obj_t *widget, const struct status_state *state) {
     for (int i = 0; i < NICEVIEW_PROFILE_COUNT; i++) {
         bool selected = false, connected = false, open = true;
 
-#if IS_ENABLED(CONFIG_ZMK_BLE) && !IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_PERIPHERAL)
+#if IS_CENTRAL
         selected = (i == zmk_ble_active_profile_index());
         connected = zmk_ble_profile_is_connected(i);
         open = zmk_ble_profile_is_open(i);
@@ -139,7 +140,7 @@ static void draw_bottom(lv_obj_t *widget, const struct status_state *state) {
     uint8_t active_layer_index = 0;
     const char *layer_name = NULL;
 
-#if IS_ENABLED(CONFIG_ZMK_KEYMAP) && !IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_PERIPHERAL)
+#if IS_ENABLED(CONFIG_ZMK_KEYMAP) && IS_CENTRAL
     active_layer_index = zmk_keymap_highest_layer_active();
     layer_name = zmk_keymap_layer_name(active_layer_index);
 #endif
@@ -154,10 +155,7 @@ static void draw_bottom(lv_obj_t *widget, const struct status_state *state) {
     rotate_canvas(canvas);
 }
 
-// ====================================================================================
-// 状态更新逻辑 (Update Logic)
-// ====================================================================================
-
+// ---------------- 电池监听器 (始终保留) ----------------
 static void set_battery_status(struct zmk_widget_status *widget, struct battery_status_state state) {
 #if IS_ENABLED(CONFIG_USB_DEVICE_STACK)
     widget->state.charging = state.usb_present;
@@ -180,14 +178,14 @@ static struct battery_status_state battery_status_get_state(const zmk_event_t *e
 #endif
     };
 }
-
 ZMK_DISPLAY_WIDGET_LISTENER(lpm_widget_battery_status, struct battery_status_state, battery_status_update_cb, battery_status_get_state)
 ZMK_SUBSCRIPTION(lpm_widget_battery_status, zmk_battery_state_changed);
 
-// Output Status 保护
+// ---------------- 核心功能监听器 (仅主手链接) ----------------
+
 static struct output_status_state output_status_get_state(const zmk_event_t *_eh) {
     struct output_status_state state = {0};
-#if IS_ENABLED(CONFIG_ZMK_BLE) && !IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_PERIPHERAL)
+#if IS_CENTRAL
     state.selected_endpoint = zmk_endpoint_get_selected();
     state.active_profile_index = zmk_ble_active_profile_index();
     state.active_profile_connected = zmk_ble_active_profile_is_connected();
@@ -199,68 +197,49 @@ static struct output_status_state output_status_get_state(const zmk_event_t *_eh
 #endif
     return state;
 }
-
 static void output_status_update_cb(struct output_status_state state) {
     struct zmk_widget_status *widget;
     SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) { draw_middle(widget->obj, &widget->state); }
 }
-
 ZMK_DISPLAY_WIDGET_LISTENER(lpm_widget_output_status, struct output_status_state, output_status_update_cb, output_status_get_state)
 
-// Layer Status 保护
 static struct layer_status_state layer_status_get_state(const zmk_event_t *eh) {
-    uint8_t index = 0;
-    const char *label = NULL;
-#if IS_ENABLED(CONFIG_ZMK_KEYMAP) && !IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_PERIPHERAL)
+    uint8_t index = 0; const char *label = NULL;
+#if IS_CENTRAL
     index = zmk_keymap_highest_layer_active();
     label = zmk_keymap_layer_name(index);
 #endif
     return (struct layer_status_state){ .index = index, .label = label };
 }
-
 static void layer_status_update_cb(struct layer_status_state state) {
     struct zmk_widget_status *widget;
     SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) { draw_bottom(widget->obj, &widget->state); }
 }
-
 ZMK_DISPLAY_WIDGET_LISTENER(lpm_widget_layer_status, struct layer_status_state, layer_status_update_cb, layer_status_get_state)
 
-// WPM Status 保护
 struct wpm_status_state wpm_status_get_state(const zmk_event_t *eh) {
     uint8_t wpm = 0;
-#if IS_ENABLED(CONFIG_ZMK_WPM) && !IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_PERIPHERAL)
+#if IS_ENABLED(CONFIG_ZMK_WPM) && IS_CENTRAL
     wpm = zmk_wpm_get_state();
 #endif
     return (struct wpm_status_state){.wpm = wpm};
 }
-
 static void wpm_status_update_cb(struct wpm_status_state state) {
     struct zmk_widget_status *widget;
     SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) { draw_top(widget->obj, &widget->state); }
 }
-
 ZMK_DISPLAY_WIDGET_LISTENER(lpm_widget_wpm_status, struct wpm_status_state, wpm_status_update_cb, wpm_status_get_state)
 
-// ====================================================================================
-// 事件订阅 (Subscriptions) - 只在功能存在时订阅
-// ====================================================================================
+// ---------------- 事件订阅保护 ----------------
 
-#if IS_ENABLED(CONFIG_ZMK_BLE) && !IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_PERIPHERAL)
+#if IS_CENTRAL
 ZMK_SUBSCRIPTION(lpm_widget_output_status, zmk_ble_active_profile_changed);
 ZMK_SUBSCRIPTION(lpm_widget_output_status, zmk_endpoint_changed);
-#endif
-
-#if IS_ENABLED(CONFIG_ZMK_KEYMAP) && !IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_PERIPHERAL)
 ZMK_SUBSCRIPTION(lpm_widget_layer_status, zmk_layer_state_changed);
-#endif
-
-#if IS_ENABLED(CONFIG_ZMK_WPM) && !IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_PERIPHERAL)
+#if IS_ENABLED(CONFIG_ZMK_WPM)
 ZMK_SUBSCRIPTION(lpm_widget_wpm_status, zmk_wpm_state_changed);
 #endif
-
-// ====================================================================================
-// 初始化 (Init)
-// ====================================================================================
+#endif
 
 int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     widget->obj = lv_obj_create(parent);
