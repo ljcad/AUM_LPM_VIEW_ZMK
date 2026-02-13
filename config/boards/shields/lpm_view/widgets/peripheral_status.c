@@ -128,7 +128,7 @@ static void draw_middle(lv_obj_t *widget, const struct status_state *state) {
         if (zmk_ble_profile_is_connected(i)) {
             canvas_draw_arc(canvas, circle_offsets[i][0], circle_offsets[i][1], 13, 0, 360,
                             &arc_dsc);
-        } else if (zmk_ble_profile_is_bonded(i)) {
+        } else if (zmk_ble_profile_is_open(i) == false) {
             const int segments = 8;
             const int gap = 20;
             for (int j = 0; j < segments; ++j)
@@ -158,7 +158,7 @@ static void draw_bottom(lv_obj_t *widget, const struct status_state *state) {
     lv_draw_rect_dsc_t rect_black_dsc;
     init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
     lv_draw_label_dsc_t label_dsc;
-    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_14, LV_TEXT_ALIGN_CENTER);
+    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_CENTER);
 
     // Fill background
     lv_canvas_fill_bg(canvas, LVGL_BACKGROUND, LV_OPA_COVER);
