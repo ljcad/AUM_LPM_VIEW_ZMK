@@ -10,7 +10,7 @@
 
 #define NICEVIEW_PROFILE_COUNT 5
 
-#define CANVAS_SIZE 72
+#define CANVAS_SIZE 68
 #define CANVAS_COLOR_FORMAT LV_COLOR_FORMAT_L8 // smallest type supported by sw_rotate
 #define CANVAS_BUF_SIZE                                                                            \
     LV_CANVAS_BUF_SIZE(CANVAS_SIZE, CANVAS_SIZE, LV_COLOR_FORMAT_GET_BPP(CANVAS_COLOR_FORMAT),     \
