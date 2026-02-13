@@ -37,15 +37,6 @@ struct output_status_state {
     bool profiles_bonded[NICEVIEW_PROFILE_COUNT];
 };
 
-struct status_state {
-    uint8_t battery;
-    bool charging;
-    uint8_t active_profile_index;
-    // 如果你在 draw_bottom 里还用到了 layer_index，请加上这一行：
-    uint8_t layer_index; 
-    // 虽然我们改用了 API，但为了兼容回调函数的参数传递，保留此结构体
-};
-
 // 紧接着是原有的 widget 结构体定义（通常代码里已经有了，检查一下）
 struct zmk_widget_status {
     lv_obj_t *obj;
